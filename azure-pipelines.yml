@@ -27,15 +27,10 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    mkdir -p $(System.DefaultWorkingDirectory)/test-results
-    pytest --junitxml=$(System.DefaultWorkingDirectory)/test-results/results.xml
-    ls -l $(System.DefaultWorkingDirectory)/test-results
-  displayName: 'Run tests and list test results'
-
-- script: |
-    echo "Confirming test result XML exists:"
-    test -f $(System.DefaultWorkingDirectory)/test-results/results.xml && echo "File exists" || echo "File NOT found"
-  displayName: 'Check if test results XML file exists'
+    mkdir -p test-results
+    pytest --junitxml=test-results/results.xml
+    ls -R test-results  # List contents of the test-results directory
+  displayName: 'Run tests and generate test report'
 
 - task: PublishBuildArtifacts@1
   inputs:
@@ -47,14 +42,6 @@ steps:
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
+    testResultsFiles: 'test-results/results.xml'  # Specify the exact path to the XML file
     failTaskOnFailedTests: true
   displayName: 'Publish test results'
-
-
-  
-
-
-
-
-
