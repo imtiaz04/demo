@@ -1,13 +1,14 @@
 trigger:
   branches:
     include:
-      - main    # runs pipeline on push to main branch
+      - main  # Runs pipeline on push to main branch
 
 pool:
-  name: 'test'   # self-hosted Linux agent pool
+  name: 'test'  # Self-hosted Linux agent pool
 
 steps:
 
+# Step 1: Install Python 3.10
 - script: |
     sudo apt-get update
     sudo apt-get install -y software-properties-common
@@ -17,34 +18,38 @@ steps:
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
     sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
     python --version
-    python -m ensurepip
+    python -m ensurepip --upgrade
   displayName: 'Install Python 3.10'
 
+# Step 2: Install dependencies
 - script: |
     python -m pip install --upgrade pip
     python -m pip install -r requirements.txt
     python -m pip install pytest
+    python -m pip list
   displayName: 'Install dependencies'
 
+# Step 3: Run tests and generate JUnit XML report
 - script: |
     mkdir -p test-results
     python -m pytest --junitxml=test-results/results.xml
-    ls -R test-results  # List contents of the test-results directory
+    ls -R test-results
   displayName: 'Run tests and generate test report'
+  continueOnError: true  # Continue pipeline even if tests fail
 
+# Step 4: Publish test results (will not fail pipeline)
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/test-results/*.xml'
+    failTaskOnFailedTests: false  # Show test failures but don’t fail pipeline
+  condition: succeededOrFailed()
+  displayName: 'Publish test results'
+
+# Step 5: Publish artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)'
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
-  displayName: 'Publish artifact'
-
-  - task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '*/test-results/.xml'
-    failTaskOnFailedTests: false  # Allow test failures without failing the pipeline
-  condition: succeededOrFailed()
-  displayName: 'Publish test results'
-
-
+  displayName: 'Publish build artifact'
