@@ -27,9 +27,9 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    mkdir -p test-results
-    pytest --junitxml=test-results/results.xml
-    ls -R test-results  # List contents of the test-results directory
+    mkdir -p $(System.DefaultWorkingDirectory)/test-results
+    pytest --junitxml=$(System.DefaultWorkingDirectory)/test-results/results.xml
+    ls -lR $(System.DefaultWorkingDirectory)/test-results
   displayName: 'Run tests and generate test report'
 
 - task: PublishBuildArtifacts@1
@@ -38,10 +38,14 @@ steps:
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
-
+  
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
+    testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results/results.xml'
     failTaskOnFailedTests: true
   displayName: 'Publish test results'
+
+
+
+
