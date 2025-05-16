@@ -1,13 +1,10 @@
 trigger:
   branches:
     include:
-      - main
+      - main    # runs pipeline on push to main branch
 
 pool:
-  name: 'test'  # Self-hosted agent pool
-
-variables:
-  TEST_EXIT_CODE: 0
+  name: 'test'   # self-hosted Linux agent pool
 
 steps:
 
@@ -30,32 +27,21 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    mkdir -p $(Build.SourcesDirectory)/test-results
-    pytest -v --junitxml=$(Build.SourcesDirectory)/test-results/results.xml || echo "##vso[task.setvariable variable=TEST_EXIT_CODE;isOutput=true]1"
-    ls -R $(Build.SourcesDirectory)/test-results
+    mkdir -p test-results
+    pytest --junitxml=test-results/results.xml
+    ls -R test-results  # List contents of the test-results directory
   displayName: 'Run tests and generate test report'
-  continueOnError: true
-  name: runTests
-
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml'
-    failTaskOnFailedTests: false
-  displayName: 'Publish test results'
 
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(Build.SourcesDirectory)'
+    PathtoPublish: '$(System.DefaultWorkingDirectory)'
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
 
-- script: |
-    if [ "$(runTests.TEST_EXIT_CODE)" == "1" ]; then
-      echo "Tests failed — exiting with error code 1"
-      exit 1
-    else
-      echo "Tests passed"
-    fi
-  displayName: 'Fail pipeline if tests failed'
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
+    failTaskOnFailedTests: true
+  displayName: 'Publish test results'
