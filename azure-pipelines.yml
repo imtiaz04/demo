@@ -42,6 +42,6 @@ steps:
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
+    testResultsFiles: 'test-results/results.xml'  # Specify the exact path to the XML file
     failTaskOnFailedTests: true
   displayName: 'Publish test results'
