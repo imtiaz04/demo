@@ -1,14 +1,15 @@
 trigger:
   branches:
     include:
-      - main    # runs pipeline on push to main branch
+      - main
 
 pool:
-  name: 'test'   # self-hosted Linux agent pool
+  name: 'test'  # self-hosted Linux agent pool
 
 steps:
 
 - script: |
+    echo "Installing Python 3.10 and running all in one step..."
     sudo apt-get update
     sudo apt-get install -y software-properties-common
     sudo add-apt-repository -y ppa:deadsnakes/ppa
@@ -16,21 +17,34 @@ steps:
     sudo apt-get install -y python3.10 python3.10-venv python3.10-dev
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
     sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-    python --version
-    python -m ensurepip
-  displayName: 'Install Python 3.10'
+
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+    source venv/bin/activate
+
+    echo "Installing dependencies..."
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    pip install pytest
+
+    echo "Running tests and saving results..."
+    mkdir -p $(System.DefaultWorkingDirectory)/test-results
+    pytest --junitxml=$(System.DefaultWorkingDirectory)/test-results/results.xml
+  displayName: 'Install Python, set up venv, run tests'
 
 - script: |
-    python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
-    python -m pip install pytest
-  displayName: 'Install dependencies'
+    echo "Listing test-results directory:"
+    ls -lR $(System.DefaultWorkingDirectory)/test-results
+    echo "Listing working directory:"
+    ls -lR $(System.DefaultWorkingDirectory)
+  displayName: 'Debug: Confirm test-results exist'
 
-- script: |
-    mkdir -p test-results
-    pytest --junitxml=test-results/results.xml
-    ls -R test-results  # List contents of the test-results directory
-  displayName: 'Run tests and generate test report'
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results/results.xml'
+    failTaskOnFailedTests: true
+  displayName: 'Publish test results'
 
 - task: PublishBuildArtifacts@1
   inputs:
@@ -38,10 +52,3 @@ steps:
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
-
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
-    failTaskOnFailedTests: true
-  displayName: 'Publish test results'
