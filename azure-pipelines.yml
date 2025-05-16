@@ -28,7 +28,7 @@ steps:
 
 - script: |
     mkdir -p test-results
-    pytest --junitxml=test-results/results.xml
+    python -m pytest --junitxml=test-results/results.xml
     ls -R test-results  # List contents of the test-results directory
   displayName: 'Run tests and generate test report'
 
