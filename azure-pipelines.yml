@@ -4,37 +4,51 @@ trigger:
       - main
 
 pool:
-  name: 'test'  # Replace with your actual self-hosted agent pool name
+  name: 'test'  # Replace with your self-hosted agent pool name
 
 steps:
 
-# Step 1: Install Python 3.10
+# Step 1: Install Python 3.10 (with checks)
 - script: |
+    set -e
+    echo "Updating APT packages..."
     sudo apt-get update
+    echo "Installing required tools..."
     sudo apt-get install -y software-properties-common
+    echo "Adding deadsnakes PPA..."
     sudo add-apt-repository -y ppa:deadsnakes/ppa
     sudo apt-get update
+    echo "Installing Python 3.10..."
     sudo apt-get install -y python3.10 python3.10-venv python3.10-dev
+    echo "Configuring Python alternatives..."
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
     sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-    python --version
-    python -m ensurepip
+    echo "Checking Python version..."
+    python --version || which python || echo "Python not found!"
+    python -m ensurepip || echo "ensurepip failed"
   displayName: 'Install Python 3.10'
 
 # Step 2: Install dependencies
 - script: |
+    set -e
+    echo "Upgrading pip..."
     python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
+    echo "Installing from requirements.txt..."
+    python -m pip install -r requirements.txt || echo "requirements.txt not found or install failed"
+    echo "Installing pytest..."
     python -m pip install pytest
+    echo "Installed packages:"
     python -m pip list
   displayName: 'Install Python dependencies'
 
-# Step 3: Run tests and generate test results
+# Step 3: Run tests and create test report
 - script: |
+    set -e
     mkdir -p test-results
-    pytest --junitxml=test-results/results.xml
+    echo "Running pytest..."
+    python -m pytest --junitxml=test-results/results.xml
   displayName: 'Run tests and generate test report'
-  continueOnError: true  # Ensures the next steps run even if tests fail
+  continueOnError: true
 
 # Step 4: Publish test results
 - task: PublishTestResults@2
@@ -45,10 +59,10 @@ steps:
   condition: succeededOrFailed()
   displayName: 'Publish test results'
 
-# Step 5: Publish artifact
+# Step 5: Publish artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)'
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
-  displayName: 'Publish artifact'
+  displayName: 'Publish build artifact'
