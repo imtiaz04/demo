@@ -9,6 +9,7 @@ pool:
 steps:
 
 - script: |
+    echo "Installing Python 3.10..."
     sudo apt-get update
     sudo apt-get install -y software-properties-common
     sudo add-apt-repository -y ppa:deadsnakes/ppa
@@ -21,18 +22,18 @@ steps:
   displayName: 'Install Python 3.10'
 
 - script: |
-    python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
-    python -m pip install pytest
-  displayName: 'Install dependencies'
-
-- script: |
+    echo "Creating virtual environment and installing dependencies..."
+    python -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    pip install pytest
     mkdir -p test-results
     pytest --junitxml=test-results/results.xml
-  displayName: 'Run tests and generate test report'
+  displayName: 'Setup environment, install dependencies, run tests'
 
 - script: |
-    echo "Listing contents of test-results directory:"
+    echo "Verifying test results exist..."
     find $(System.DefaultWorkingDirectory)/test-results
   displayName: 'Debug: Check test result file exists'
 
