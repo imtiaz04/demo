@@ -4,10 +4,11 @@ trigger:
       - main
 
 pool:
-  name: 'test'   # self-hosted Linux agent pool
+  name: 'test'  # Replace with your actual self-hosted agent pool name
 
 steps:
 
+# Step 1: Install Python 3.10
 - script: |
     sudo apt-get update
     sudo apt-get install -y software-properties-common
@@ -20,34 +21,34 @@ steps:
     python -m ensurepip
   displayName: 'Install Python 3.10'
 
+# Step 2: Install dependencies
 - script: |
     python -m pip install --upgrade pip
     python -m pip install -r requirements.txt
     python -m pip install pytest
-  displayName: 'Install dependencies'
+    python -m pip list
+  displayName: 'Install Python dependencies'
 
+# Step 3: Run tests and generate test results
 - script: |
     mkdir -p test-results
     pytest --junitxml=test-results/results.xml
-    ls -l test-results
-    if [ -f test-results/results.xml ]; then
-      echo "Test results file found."
-    else
-      echo "ERROR: Test results file not found!"
-      exit 1
-    fi
   displayName: 'Run tests and generate test report'
+  continueOnError: true  # Ensures the next steps run even if tests fail
 
+# Step 4: Publish test results
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'test-results/results.xml'
+    failTaskOnFailedTests: true
+  condition: succeededOrFailed()
+  displayName: 'Publish test results'
+
+# Step 5: Publish artifact
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)'
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
-
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: 'test-results/results.xml'
-    failTaskOnFailedTests: true
-  displayName: 'Publish test results'
