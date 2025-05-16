@@ -37,14 +37,14 @@ steps:
     test -f $(System.DefaultWorkingDirectory)/test-results/results.xml && echo "File exists" || echo "File NOT found"
   displayName: 'Check if test results XML file exists'
 
-- task: PublishTestResults@2
+- task: PublishTestResults@1
   inputs:
     testResultsFormat: 'JUnit'
     testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results/results.xml'
     failTaskOnFailedTests: true
   displayName: 'Publish test results'
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishBuildArtifacts@2
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)'
     ArtifactName: 'PythonApp'
