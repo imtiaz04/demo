@@ -29,8 +29,13 @@ steps:
 - script: |
     mkdir -p $(System.DefaultWorkingDirectory)/test-results
     pytest --junitxml=$(System.DefaultWorkingDirectory)/test-results/results.xml
-    ls -lR $(System.DefaultWorkingDirectory)/test-results
-  displayName: 'Run tests and generate test report'
+    ls -l $(System.DefaultWorkingDirectory)/test-results
+  displayName: 'Run tests and list test results'
+
+- script: |
+    echo "Confirming test result XML exists:"
+    test -f $(System.DefaultWorkingDirectory)/test-results/results.xml && echo "File exists" || echo "File NOT found"
+  displayName: 'Check if test results XML file exists'
 
 - task: PublishBuildArtifacts@1
   inputs:
@@ -38,13 +43,17 @@ steps:
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
-  
+
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
     testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results/results.xml'
     failTaskOnFailedTests: true
   displayName: 'Publish test results'
+
+
+  
+
 
 
 
