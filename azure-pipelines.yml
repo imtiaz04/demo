@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - main  # runs pipeline on push to main branch
+      - main    # runs pipeline on push to main branch
 
 pool:
   name: 'test'   # self-hosted Linux agent pool
@@ -9,7 +9,6 @@ pool:
 steps:
 
 - script: |
-    echo "Installing Python 3.10..."
     sudo apt-get update
     sudo apt-get install -y software-properties-common
     sudo add-apt-repository -y ppa:deadsnakes/ppa
@@ -22,26 +21,16 @@ steps:
   displayName: 'Install Python 3.10'
 
 - script: |
-    echo "Installing dependencies..."
     python -m pip install --upgrade pip
     python -m pip install -r requirements.txt
     python -m pip install pytest
   displayName: 'Install dependencies'
 
 - script: |
-    echo "Running tests and saving results..."
-    mkdir -p $(System.DefaultWorkingDirectory)/test-results
-    pytest --junitxml=$(System.DefaultWorkingDirectory)/test-results/results.xml
-    echo "Contents of test-results directory:"
-    ls -lR $(System.DefaultWorkingDirectory)/test-results
+    mkdir -p test-results
+    pytest --junitxml=test-results/results.xml
+    ls -R test-results  # List contents of the test-results directory
   displayName: 'Run tests and generate test report'
-
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results/results.xml'
-    failTaskOnFailedTests: true
-  displayName: 'Publish test results'
 
 - task: PublishBuildArtifacts@1
   inputs:
@@ -49,3 +38,10 @@ steps:
     ArtifactName: 'PythonApp'
     publishLocation: 'Container'
   displayName: 'Publish artifact'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/test-results/*.xml'  # Use wildcard to match any XML files
+    failTaskOnFailedTests: true
+  displayName: 'Publish test results'
