@@ -4,7 +4,7 @@ trigger:
       - main  # Runs pipeline on push to main branch
 
 pool:
-  name: 'test'  # Self-hosted Linux agent pool
+  name: 'Default'  # Self-hosted Linux agent pool
 
 steps:
 
